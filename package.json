@@ -10,6 +10,10 @@
   "keywords": [],
   "author": "Ahmed Habib",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ahmedhabibsalah/widgetron.git"
+  },
   "type": "commonjs",
   "dependencies": {
     "dotenv": "^17.4.2",
