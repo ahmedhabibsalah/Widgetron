@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Environment variables — never commit real API keys
+.env
+.env.local
+
+# Build output
+dist/
+build/
+
+# Logs
+npm-debug.log*
+*.log
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Package manager lockfiles from other tools (keep only one)
+yarn.lock
+pnpm-lock.yaml
