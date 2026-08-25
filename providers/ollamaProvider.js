@@ -1,7 +1,3 @@
-// Every provider exports one function with this exact shape:
-// chat({ messages, systemPrompt }) -> Promise<string>
-// messages: [{ role: "user" | "assistant", content: "..." }]
-
 async function chat({ messages, systemPrompt }) {
   const res = await fetch("http://localhost:11434/api/chat", {
     method: "POST",
@@ -21,4 +17,6 @@ async function chat({ messages, systemPrompt }) {
   return data.message.content;
 }
 
-module.exports = { chat };
+if (typeof module !== "undefined") {
+  module.exports = { chat };
+}
