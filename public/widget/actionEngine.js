@@ -22,7 +22,7 @@ function parseActionResponse(rawText) {
   }
 }
 
-function executeAction(action, callbacks) {
+async function executeAction(action, callbacks) {
   const handlers = {
     add_to_cart: () =>
       callbacks.onAddToCart?.(action.item, action.quantity ?? 1),
@@ -36,7 +36,7 @@ function executeAction(action, callbacks) {
     throw new Error(`No handler for action: ${action.action}`);
   }
 
-  return handler();
+  return await handler();
 }
 
 function buildActionSystemPrompt() {

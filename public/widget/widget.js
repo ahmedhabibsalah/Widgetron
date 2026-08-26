@@ -39,13 +39,6 @@ function createWidgetDOM(config) {
     </div>
   `;
 
-  // theme: "light" | "dark" forces that palette via the CSS variable
-  // overrides. Anything else (unset, "auto") leaves it to the
-  // prefers-color-scheme media query in widget.css, which follows the
-  // visitor's OS/browser setting automatically.
-  // Applied to <html>, not the widget elements themselves, so the confirm
-  // modal (mounted separately, straight to document.body) inherits the
-  // same variables too.
   if (config.theme === "light" || config.theme === "dark") {
     document.documentElement.dataset.widgetronTheme = config.theme;
   }
@@ -105,6 +98,24 @@ function resolveModesForPage(config) {
   return config.modes || ["read"];
 }
 
+function formatActionResultMessage(action, success) {
+  const qty = action.quantity ?? 1;
+
+  if (!success) {
+    return `Sorry, I couldn't complete that — please try again.`;
+  }
+
+  if (action.action === "add_to_cart") {
+    return `Added ${qty} × ${action.item} to your cart.`;
+  }
+
+  if (action.action === "remove_from_cart") {
+    return `Removed ${action.item} from your cart.`;
+  }
+
+  return "Done.";
+}
+
 async function handleSendMessage(text, elements, config, state) {
   appendMessage(elements.messagesEl, "user", text, state.history);
 
@@ -128,10 +139,22 @@ async function handleSendMessage(text, elements, config, state) {
 
     if (actionResult && actionResult.action !== "none") {
       typingEl.remove();
-      showConfirmDialog(actionResult, {
-        onAddToCart: config.onAddToCart,
-        onRemoveFromCart: config.onRemoveFromCart,
-      });
+      showConfirmDialog(
+        actionResult,
+        {
+          onAddToCart: config.onAddToCart,
+          onRemoveFromCart: config.onRemoveFromCart,
+        },
+        (finishedAction, success) => {
+          const resultText = formatActionResultMessage(finishedAction, success);
+          appendMessage(
+            elements.messagesEl,
+            "assistant",
+            resultText,
+            state.history,
+          );
+        },
+      );
       return;
     }
 

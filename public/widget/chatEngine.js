@@ -72,6 +72,7 @@ async function askAssistant({
   chatFn,
   timeoutMs = 4000,
   signal,
+  history = [],
 }) {
   const rawContext = await gatherFullContext({
     pageUrls,
@@ -80,12 +81,15 @@ async function askAssistant({
   });
   const { text, failedSources } = formatContextForPrompt(rawContext);
   const systemPrompt = buildSystemPrompt(text);
-  const rawReply = await chatFn({
-    systemPrompt,
-    messages: [{ role: "user", content: userMessage }],
-    signal,
-  });
+
+  const messages = [
+    ...history.map((m) => ({ role: m.role, content: m.text })),
+    { role: "user", content: userMessage },
+  ];
+
+  const rawReply = await chatFn({ systemPrompt, messages, signal });
   const parsedResult = parseModelResponse(rawReply);
+
   return { ...parsedResult, failedSources };
 }
 

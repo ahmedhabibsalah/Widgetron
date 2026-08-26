@@ -13,7 +13,7 @@ function formatConfirmationMessage(action) {
   return null;
 }
 
-function showConfirmDialog(action, callbacks) {
+function showConfirmDialog(action, callbacks, onResult) {
   const message = formatConfirmationMessage(action);
   if (!message) return;
 
@@ -35,9 +35,19 @@ function showConfirmDialog(action, callbacks) {
 
   modal
     .querySelector(".widgetron-modal-confirm")
-    .addEventListener("click", () => {
-      executeAction(action, callbacks);
-      close();
+    .addEventListener("click", async () => {
+      const confirmBtn = modal.querySelector(".widgetron-modal-confirm");
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Working...";
+
+      try {
+        await executeAction(action, callbacks);
+        close();
+        onResult?.(action, true, null);
+      } catch (err) {
+        close();
+        onResult?.(action, false, err.message);
+      }
     });
 
   modal
