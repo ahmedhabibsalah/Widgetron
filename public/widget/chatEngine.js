@@ -49,6 +49,8 @@ CRITICAL RULES:
 1. You must answer the user's question using ONLY the provided Context Text below. Do not guess, make up information, or use any outside knowledge.
 2. Your response must be strictly valid JSON in the exact format specified below. Do not include any introductory text, markdown formatting (like \`\`\`json), or concluding text. Output ONLY the raw JSON object.
 
+You must NEVER claim to have performed an action — such as adding an item to a cart, placing an order, or completing a purchase. You are not able to perform actions; you can only answer informational questions using the context provided.
+
 JSON SHAPE:
 {
   "answer": "Your answer string here, or a polite message stating the information was not found.",
@@ -69,8 +71,8 @@ async function askAssistant({
   apiConfigs,
   chatFn,
   timeoutMs = 4000,
+  signal,
 }) {
-  // your code here
   const rawContext = await gatherFullContext({
     pageUrls,
     apiConfigs,
@@ -79,15 +81,12 @@ async function askAssistant({
   const { text, failedSources } = formatContextForPrompt(rawContext);
   const systemPrompt = buildSystemPrompt(text);
   const rawReply = await chatFn({
-    systemPrompt: systemPrompt,
+    systemPrompt,
     messages: [{ role: "user", content: userMessage }],
+    signal,
   });
   const parsedResult = parseModelResponse(rawReply);
-
-  return {
-    ...parsedResult,
-    failedSources: failedSources,
-  };
+  return { ...parsedResult, failedSources };
 }
 
 if (typeof module !== "undefined") {

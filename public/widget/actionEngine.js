@@ -73,18 +73,15 @@ For unrelated inquiries, questions, or greetings:
   return systemPrompt;
 }
 
-async function askForAction({ userMessage, chatFn }) {
+async function askForAction({ userMessage, chatFn, signal }) {
   const systemPrompt = buildActionSystemPrompt();
   const rawReply = await chatFn({
-    systemPrompt: systemPrompt,
+    systemPrompt,
     messages: [{ role: "user", content: userMessage }],
+    signal,
   });
-
-  const parseResult = parseActionResponse(rawReply);
-
-  return parseResult;
+  return parseActionResponse(rawReply);
 }
-
 if (typeof module !== "undefined") {
   module.exports = {
     parseActionResponse,

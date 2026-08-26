@@ -17,29 +17,39 @@ function showConfirmDialog(action, callbacks) {
   const message = formatConfirmationMessage(action);
   if (!message) return;
 
-  const dialog = document.createElement("div");
-  dialog.className = "widgetron-confirm";
-  dialog.innerHTML = `
-    <p class="widgetron-confirm-message"></p>
-    <button class="widgetron-confirm-yes">Confirm</button>
-    <button class="widgetron-confirm-no">Cancel</button>
-  `;
-  dialog.querySelector(".widgetron-confirm-message").textContent = message;
+  const backdrop = document.createElement("div");
+  backdrop.className = "widgetron-modal-backdrop";
 
-  dialog
-    .querySelector(".widgetron-confirm-yes")
+  const modal = document.createElement("div");
+  modal.className = "widgetron-modal";
+  modal.innerHTML = `
+    <p class="widgetron-modal-message"></p>
+    <div class="widgetron-modal-actions">
+      <button class="widgetron-modal-cancel">Cancel</button>
+      <button class="widgetron-modal-confirm">Confirm</button>
+    </div>
+  `;
+  modal.querySelector(".widgetron-modal-message").textContent = message;
+
+  const close = () => backdrop.remove();
+
+  modal
+    .querySelector(".widgetron-modal-confirm")
     .addEventListener("click", () => {
       executeAction(action, callbacks);
-      dialog.remove();
+      close();
     });
 
-  dialog
-    .querySelector(".widgetron-confirm-no")
-    .addEventListener("click", () => {
-      dialog.remove();
-    });
+  modal
+    .querySelector(".widgetron-modal-cancel")
+    .addEventListener("click", close);
 
-  document.body.appendChild(dialog);
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) close();
+  });
+
+  backdrop.appendChild(modal);
+  document.body.appendChild(backdrop);
 }
 
 if (typeof module !== "undefined") {
