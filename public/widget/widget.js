@@ -290,6 +290,15 @@ function setupVoiceInput(elements, send) {
 }
 
 function initWidget(config) {
+  // Guard against double-initialization — e.g. React's StrictMode
+  // intentionally double-invokes effects in development, and hot-reload
+  // tooling can re-run init scripts. Without this, a second call would
+  // silently create a second bubble, second panel, and duplicate event
+  // listeners.
+  if (window.__widgetronInitialized) {
+    return;
+  }
+
   // Being loaded inside a background content-read iframe (see
   // readDynamicPage in pageReader.js) rather than a real page visit —
   // don't self-initialize. Without this guard, the widget would spin up a
@@ -299,6 +308,8 @@ function initWidget(config) {
   if (new URLSearchParams(window.location.search).has("widgetronRead")) {
     return;
   }
+
+  window.__widgetronInitialized = true;
 
   const elements = createWidgetDOM(config);
   const state = { activeController: null, history: loadHistory() };
