@@ -2,9 +2,24 @@ const ICONS = {
   chat: `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
   send: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
   stop: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`,
+  mic: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
 };
 
+const SpeechRecognitionAPI =
+  window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function isSpeechSupported() {
+  return typeof SpeechRecognitionAPI !== "undefined";
+}
+
 const HISTORY_KEY = "widgetron-chat-history";
+
+const ACTION_CLAIM_PATTERN =
+  /\b(added|removed|placed your order|order (id|#|number)|added to (your|the) cart)\b/i;
+
+function containsActionClaim(text) {
+  return ACTION_CLAIM_PATTERN.test(text);
+}
 
 function loadHistory() {
   try {
@@ -34,11 +49,23 @@ function createWidgetDOM(config) {
   panel.innerHTML = `
     <div class="widgetron-messages"></div>
     <div class="widgetron-input-row">
+      ${
+        isSpeechSupported() && config.voice !== false
+          ? `<button class="widgetron-mic" type="button" title="Speak">${ICONS.mic}</button>`
+          : ""
+      }
       <input type="text" placeholder="Ask something..." />
       <button class="widgetron-send" type="button">${ICONS.send}</button>
     </div>
   `;
 
+  // theme: "light" | "dark" forces that palette via the CSS variable
+  // overrides. Anything else (unset, "auto") leaves it to the
+  // prefers-color-scheme media query in widget.css, which follows the
+  // visitor's OS/browser setting automatically.
+  // Applied to <html>, not the widget elements themselves, so the confirm
+  // modal (mounted separately, straight to document.body) inherits the
+  // same variables too.
   if (config.theme === "light" || config.theme === "dark") {
     document.documentElement.dataset.widgetronTheme = config.theme;
   }
@@ -54,6 +81,7 @@ function createWidgetDOM(config) {
     messagesEl: panel.querySelector(".widgetron-messages"),
     inputEl: panel.querySelector("input"),
     sendBtn: panel.querySelector(".widgetron-send"),
+    micBtn: panel.querySelector(".widgetron-mic"), // null if unsupported or disabled
   };
 }
 
@@ -166,13 +194,19 @@ async function handleSendMessage(text, elements, config, state) {
       signal: controller.signal,
     });
 
+    let finalAnswer = assistantResult.answer;
+
+    // Backstop against the model claiming an action happened on a page
+    // where action mode isn't even active — never trust the model's own
+    // claim about performing an action, override it in code regardless of
+    // what it says.
+    if (!activeModes.includes("action") && containsActionClaim(finalAnswer)) {
+      finalAnswer =
+        "I can only answer questions here — I'm not able to perform actions like adding or removing items on this page.";
+    }
+
     typingEl.remove();
-    appendMessage(
-      elements.messagesEl,
-      "assistant",
-      assistantResult.answer,
-      state.history,
-    );
+    appendMessage(elements.messagesEl, "assistant", finalAnswer, state.history);
   } catch (err) {
     typingEl.remove();
     if (err.name !== "AbortError") {
@@ -195,7 +229,71 @@ function setSendButtonState(sendBtn, mode) {
   sendBtn.dataset.mode = mode;
 }
 
+function setupVoiceInput(elements, send) {
+  if (!elements.micBtn) return; // unsupported browser, or voice disabled in config
+
+  const recognizer = new SpeechRecognitionAPI();
+  recognizer.lang = navigator.language || "en-US";
+  recognizer.continuous = false;
+  recognizer.interimResults = true;
+
+  let listening = false;
+
+  const setListeningState = (isListening) => {
+    listening = isListening;
+    elements.micBtn.classList.toggle("listening", isListening);
+  };
+
+  elements.micBtn.addEventListener("click", () => {
+    if (listening) {
+      recognizer.stop();
+      return;
+    }
+    try {
+      recognizer.start();
+      setListeningState(true);
+    } catch {
+      // start() throws if called while already running — ignore, the
+      // existing session will just continue.
+    }
+  });
+
+  recognizer.addEventListener("result", (e) => {
+    const transcript = Array.from(e.results)
+      .map((r) => r[0].transcript)
+      .join("");
+    elements.inputEl.value = transcript;
+
+    const lastResult = e.results[e.results.length - 1];
+    if (lastResult.isFinal) {
+      setListeningState(false);
+      send();
+    }
+  });
+
+  recognizer.addEventListener("error", () => {
+    setListeningState(false);
+    // Permission denied, no speech detected, etc. — fail quietly, the
+    // person can just type instead. No need to surface a chat error for
+    // an optional input method.
+  });
+
+  recognizer.addEventListener("end", () => {
+    setListeningState(false);
+  });
+}
+
 function initWidget(config) {
+  // Being loaded inside a background content-read iframe (see
+  // readDynamicPage in pageReader.js) rather than a real page visit —
+  // don't self-initialize. Without this guard, the widget would spin up a
+  // second hidden copy of itself inside every page it reads for context,
+  // restoring THAT copy's chat history and leaking it into the very
+  // context being gathered.
+  if (new URLSearchParams(window.location.search).has("widgetronRead")) {
+    return;
+  }
+
   const elements = createWidgetDOM(config);
   const state = { activeController: null, history: loadHistory() };
 
@@ -219,6 +317,8 @@ function initWidget(config) {
   elements.inputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") send();
   });
+
+  setupVoiceInput(elements, send);
 }
 
 if (typeof window !== "undefined") {
