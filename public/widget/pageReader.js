@@ -2,7 +2,9 @@ function readDynamicPage(url, timeoutMs = 4000) {
   const iframeRead = new Promise((resolve, reject) => {
     const iframe = document.createElement("iframe");
     iframe.style.display = "none";
+
     iframe.src = url + (url.includes("?") ? "&" : "?") + "widgetronRead=1";
+
     iframe.onload = () => {
       try {
         const doc = iframe.contentDocument;

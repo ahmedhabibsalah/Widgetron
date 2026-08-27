@@ -2,10 +2,10 @@
   "name": "website-reader",
   "version": "1.0.0",
   "description": "Embeddable AI assistant for websites — reads page content to answer questions, and performs configurable, confirmed actions like cart operations. Bring your own AI provider.",
-  "main": "index.js",
+  "main": "relayServer.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node relayServer.js"
   },
   "keywords": [],
   "author": "Ahmed Habib",

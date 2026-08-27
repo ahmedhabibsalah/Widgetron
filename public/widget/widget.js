@@ -145,6 +145,10 @@ function formatActionResultMessage(action, success) {
 }
 
 async function handleSendMessage(text, elements, config, state) {
+  // Snapshot BEFORE appending the current message — otherwise the current
+  // message ends up duplicated (once from history, once as userMessage).
+  const recentHistory = state.history.slice(-6);
+
   appendMessage(elements.messagesEl, "user", text, state.history);
 
   const activeModes = resolveModesForPage(config);
@@ -162,6 +166,7 @@ async function handleSendMessage(text, elements, config, state) {
         chatFn: config.chatFn,
         userMessage: text,
         signal: controller.signal,
+        history: recentHistory,
       });
     }
 
@@ -192,6 +197,7 @@ async function handleSendMessage(text, elements, config, state) {
       pageUrls: config.pageUrls,
       apiConfigs: config.apiConfigs,
       signal: controller.signal,
+      history: recentHistory,
     });
 
     let finalAnswer = assistantResult.answer;
