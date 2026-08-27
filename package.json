@@ -1,8 +1,12 @@
 {
-  "name": "website-reader",
-  "version": "1.0.0",
+  "name": "widgetron",
+  "version": "0.1.0",
   "description": "Embeddable AI assistant for websites — reads page content to answer questions, and performs configurable, confirmed actions like cart operations. Bring your own AI provider.",
-  "main": "relayServer.js",
+  "main": "dist/widgetron.js",
+  "style": "dist/widgetron.css",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node relayServer.js"
