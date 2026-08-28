@@ -1,8 +1,17 @@
 {
   "name": "widgetron",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Embeddable AI assistant for websites — reads page content to answer questions, and performs configurable, confirmed actions like cart operations. Bring your own AI provider.",
   "main": "dist/widgetron.js",
+  "module": "dist/widgetron.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/widgetron.esm.js",
+      "require": "./dist/widgetron.js",
+      "default": "./dist/widgetron.js"
+    },
+    "./dist/widgetron.css": "./dist/widgetron.css"
+  },
   "style": "dist/widgetron.css",
   "files": [
     "dist"
@@ -11,7 +20,14 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node relayServer.js"
   },
-  "keywords": [],
+  "keywords": [
+    "ai",
+    "chatbot",
+    "widget",
+    "embeddable",
+    "ecommerce",
+    "assistant"
+  ],
   "author": "Ahmed Habib",
   "license": "MIT",
   "repository": {

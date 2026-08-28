@@ -175,6 +175,7 @@ html[data-widgetron-theme="dark"] {
 
 .widgetron-input-row input {
   flex: 1;
+  min-width: 0;
   border: 1px solid var(--wt-border);
   background: var(--wt-bg);
   color: var(--wt-text);
@@ -194,38 +195,52 @@ html[data-widgetron-theme="dark"] {
 
 .widgetron-mic {
   border: none;
-  background: transparent;
-  color: var(--wt-muted);
+  background: var(--wt-msg-user-bg);
+  color: var(--wt-text);
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   transition:
-    color 0.15s ease,
-    background 0.15s ease;
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.widgetron-bubble svg,
+.widgetron-send svg,
+.widgetron-mic svg {
+  width: 20px !important;
+  height: 20px !important;
+  max-width: none !important;
+  flex-shrink: 0;
+}
+
+.widgetron-bubble svg {
+  width: 26px !important;
+  height: 26px !important;
 }
 
 .widgetron-mic:hover {
-  color: var(--wt-text);
-  background: var(--wt-msg-user-bg);
+  background: var(--wt-border);
 }
 
 .widgetron-mic.listening {
-  color: #d9453d;
+  background: #d9453d;
+  color: #ffffff;
   animation: widgetron-mic-pulse 1.2s infinite ease-in-out;
 }
 
 @keyframes widgetron-mic-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(217, 69, 61, 0.35);
+    box-shadow: 0 0 0 0 rgba(217, 69, 61, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(217, 69, 61, 0);
+    box-shadow: 0 0 0 8px rgba(217, 69, 61, 0);
   }
 }
 

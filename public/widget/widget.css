@@ -175,6 +175,7 @@ html[data-widgetron-theme="dark"] {
 
 .widgetron-input-row input {
   flex: 1;
+  min-width: 0;
   border: 1px solid var(--wt-border);
   background: var(--wt-bg);
   color: var(--wt-text);
